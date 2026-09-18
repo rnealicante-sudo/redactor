@@ -1,0 +1,6 @@
+{
+  "name": "Ayudante de Redacción",
+  "description": "Asistente editorial profesional: transcribe audios, extrae resumen ejecutivo con puntos clave minutados, redacta crónicas de prensa impresa y genera boletines de radio de 90 segundos con locución de España, con descargas en TXT, Word, Markdown, PDF y JSON.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
