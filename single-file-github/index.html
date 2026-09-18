@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ayudante de Redacción — Archivo Autónomo para GitHub y Local</title>
+  <meta name="description" content="Asistente editorial profesional: transcribe audios, extrae resumen ejecutivo con puntos clave minutados, redacta crónicas de prensa impresa y genera boletines de radio de 90 segundos con locución de España." />
+  
+  <!-- Tipografías de alta legibilidad editorial -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN para que funcione en un único archivo sin necesidad de compilación -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            serif: ['Lora', 'Georgia', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Estilos adicionales para impresión y lectura editorial */
+    .dropcap:first-letter {
+      float: left;
+      font-size: 3.5rem;
+      line-height: 0.85;
+      padding-top: 4px;
+      padding-right: 8px;
+      padding-bottom: 2px;
+      font-family: Lora, Georgia, serif;
+      font-weight: 700;
+      color: #1c1917;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- CABECERA -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center font-bold text-xl shadow-xs">
+          ✍️
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
+              Ayudante de Redacción
+            </h1>
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Modo Autónomo GitHub / Local
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 hidden sm:block">
+            1. Resumen minutado • 2. Transcripción con hablantes • 3. Noticia de periódico • 4. Boletín de radio (90s)
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          onclick="abrirModalApiKey()"
+          id="btn-config-api"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200 cursor-pointer"
+        >
+          🔑 <span id="label-api-key">Configurar Gemini API</span>
+        </button>
+        <button
+          type="button"
+          onclick="reiniciarTodo()"
+          id="btn-nuevo-audio"
+          class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 cursor-pointer"
+        >
+          🔄 Nuevo Audio
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+
+    <!-- ZONA 1: CARGA DE AUDIO (SIN GRABADORA NI PERMISOS DE MICRÓFONO) -->
+    <section id="seccion-carga" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            🎧 Cargar Archivo de Audio
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Compatible con cualquier formato: MP3, WAV, M4A, AAC, OGG, FLAC, WMA, OPUS, AMR, WebM y archivos de vídeo.
+          </p>
+        </div>
+        <div>
+          <button
+            type="button"
+            onclick="cargarAudioMuestra()"
+            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200 cursor-pointer"
+          >
+            ✨ Cargar audio de muestra (Rueda de Prensa)
+          </button>
+        </div>
+      </div>
+
+      <!-- Zona de Arrastrar y Soltar -->
+      <div
+        id="dropzone"
+        onclick="document.getElementById('input-audio').click()"
+        class="border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-slate-50/70 rounded-xl p-8 text-center cursor-pointer transition-all"
+      >
+        <input
+          type="file"
+          id="input-audio"
+          accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.webm"
+          class="hidden"
+          onchange="alSeleccionarArchivo(event)"
+        />
+        <div class="w-14 h-14 mx-auto rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 text-2xl">
+          📂
+        </div>
+        <p class="text-base font-semibold text-slate-800">
+          Arrastra tu archivo de <span class="text-indigo-600">audio aquí</span>
+        </p>
+        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+          o haz clic para explorar los archivos de tu ordenador o teléfono.
+        </p>
+        <div class="mt-4 flex flex-wrap justify-center gap-1.5 max-w-lg mx-auto">
+          <span class="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">MP3</span>
+          <span class="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">WAV</span>
+          <span class="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">M4A</span>
+          <span class="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">AAC</span>
+          <span class="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">OGG</span>
+          <span class="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">FLAC</span>
+          <span class="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">OPUS</span>
+        </div>
+      </div>
+
+      <!-- Resumen del archivo seleccionado y botón de procesar -->
+      <div id="vista-archivo" class="hidden space-y-4">
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-3 overflow-hidden">
+            <div class="w-10 h-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
+              🎵
+            </div>
+            <div class="truncate">
+              <p id="nombre-archivo" class="text-sm font-semibold text-slate-900 truncate">archivo.mp3</p>
+              <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                <span id="tamano-archivo">0 KB</span>
+                <span>•</span>
+                <span class="text-emerald-700 font-medium">Listo para redactar</span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onclick="quitarArchivo()"
+            class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+            title="Quitar archivo"
+          >
+            🗑️
+          </button>
+        </div>
+
+        <audio id="reproductor-previo" controls class="w-full h-10 rounded-lg"></audio>
+
+        <button
+          type="button"
+          id="btn-procesar"
+          onclick="procesarAudio()"
+          class="w-full py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-sm sm:text-base shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          ✨ Procesar y Redactar Noticia Completa
+        </button>
+      </div>
+
+      <!-- Tarjetas informativas de las 4 secciones -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
+        <div class="p-3.5 bg-amber-50/50 rounded-xl border border-amber-200/60">
+          <span class="text-lg">📌</span>
+          <h4 class="text-xs font-bold text-slate-900 mt-1">1. Resumen y Puntos Clave</h4>
+          <p class="text-[11px] text-slate-600 mt-0.5">Minutado cronológico de momentos clave [mm:ss].</p>
+        </div>
+        <div class="p-3.5 bg-blue-50/50 rounded-xl border border-blue-200/60">
+          <span class="text-lg">📝</span>
+          <h4 class="text-xs font-bold text-slate-900 mt-1">2. Transcripción Detallada</h4>
+          <p class="text-[11px] text-slate-600 mt-0.5">Líneas por hablante y preguntas en negrita.</p>
+        </div>
+        <div class="p-3.5 bg-stone-100/60 rounded-xl border border-stone-300">
+          <span class="text-lg">📰</span>
+          <h4 class="text-xs font-bold text-slate-900 mt-1">3. Crónica de Prensa</h4>
+          <p class="text-[11px] text-slate-600 mt-0.5">Redacción de periódico con formato broadsheet.</p>
+        </div>
+        <div class="p-3.5 bg-indigo-50/50 rounded-xl border border-indigo-200/60">
+          <span class="text-lg">📻</span>
+          <h4 class="text-xs font-bold text-slate-900 mt-1">4. Boletín Radio (90s)</h4>
+          <p class="text-[11px] text-slate-600 mt-0.5">Locutora con voz de España integrada en tu navegador.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ESTADO DE PROCESAMIENTO / CARGA -->
+    <div id="seccion-cargando" class="hidden bg-white rounded-2xl border border-indigo-100 shadow-sm p-8 text-center space-y-4">
+      <div class="w-12 h-12 mx-auto rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin"></div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900">Ayudante de Redacción trabajando</h3>
+        <p id="texto-estado-carga" class="text-sm text-indigo-600 font-medium mt-1">Analizando audio y estructurando información...</p>
+      </div>
+    </div>
+
+    <!-- SECCIÓN DE RESULTADOS EDITORIALES (EN EL ORDEN EXACTO SOLICITADO) -->
+    <div id="seccion-resultados" class="hidden space-y-8">
+
+      <!-- NAVEGACIÓN RÁPIDA POR PESTAÑAS -->
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto text-xs font-semibold">
+        <a href="#bloque-resumen" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white whitespace-nowrap">1. Resumen y Puntos Clave</a>
+        <a href="#bloque-transcripcion" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap">2. Transcripción</a>
+        <a href="#bloque-periodico" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap">3. Periódico</a>
+        <a href="#bloque-radio" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap">4. Boletín Radio (90s)</a>
+        <a href="#bloque-descargas" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap">5. Descargas</a>
+      </div>
+
+      <!-- 1. RESUMEN Y PUNTOS CLAVE IDENTIFICADOS CON MINUTAJE Y LETRA MÁS GRANDE -->
+      <section id="bloque-resumen" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📌</span>
+            <div>
+              <h2 class="text-xl sm:text-2xl font-black text-slate-900">1. Resumen y Puntos Clave</h2>
+              <p class="text-xs text-slate-500">Síntesis ejecutiva y momentos destacados con minutaje exacto [mm:ss]</p>
+            </div>
+          </div>
+          <button onclick="copiarTexto(obtenerTextoResumen(), '¡Resumen copiado!')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer">
+            📋 Copiar Resumen
+          </button>
+        </div>
+
+        <!-- Resumen con letra más grande -->
+        <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-5">
+          <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Síntesis Informativa</h3>
+          <p id="resumen-texto" class="text-base sm:text-lg text-slate-800 leading-relaxed font-normal">
+            <!-- Rellenado dinámicamente -->
+          </p>
+        </div>
+
+        <!-- Puntos Clave identificados con minutaje -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 mb-3 flex items-center gap-1.5">
+            <span>⏱️</span> Puntos Clave Identificados en la Grabación:
+          </h3>
+          <ul id="lista-puntos-clave" class="space-y-2.5">
+            <!-- Rellenado dinámicamente -->
+          </ul>
+        </div>
+      </section>
+
+      <!-- 2. TRANSCRIPCIÓN DETALLADA CON HABLANTES Y PREGUNTAS EN NEGRITA -->
+      <section id="bloque-transcripcion" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📝</span>
+            <div>
+              <h2 class="text-xl sm:text-2xl font-black text-slate-900">2. Transcripción Detallada</h2>
+              <p class="text-xs text-slate-500">Saltos de línea por hablante y preguntas en <strong>negrita</strong></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="copiarTexto(textoTranscripcionPlana, '¡Transcripción copiada!')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer">
+              📋 Copiar Transcripción
+            </button>
+            <button onclick="descargarArchivo(textoTranscripcionPlana, 'transcripcion.txt', 'text/plain')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer">
+              💾 Descargar TXT
+            </button>
+          </div>
+        </div>
+
+        <div id="caja-transcripcion" class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-3 font-sans text-sm sm:text-base leading-relaxed max-h-[500px] overflow-y-auto">
+          <!-- Rellenado dinámicamente con preguntas en negrita y cambios de hablante -->
+        </div>
+      </section>
+
+      <!-- 3. NOTICIA PERIODÍSTICA DE PORTADA (ESTILO PERIÓDICO IMPRESO) -->
+      <section id="bloque-periodico" class="bg-[#fdfcf9] rounded-2xl border-2 border-stone-300 shadow-md p-6 sm:p-10 space-y-6 font-serif">
+        <div class="border-b-2 border-stone-800 pb-3 flex flex-wrap items-center justify-between text-xs uppercase tracking-wider text-stone-600 font-sans font-semibold">
+          <span>📰 EDICIÓN DE PRENSA IMPRESA • CRÓNICA GENERAL</span>
+          <span id="fecha-periodico">EDICIÓN DIARIA</span>
+        </div>
+
+        <div class="text-center max-w-3xl mx-auto space-y-3">
+          <p id="periodico-seccion" class="text-xs font-sans uppercase tracking-[0.2em] font-bold text-amber-700">ACTUALIDAD</p>
+          <h2 id="periodico-titular" class="text-2xl sm:text-4xl font-black text-stone-900 tracking-tight leading-tight">
+            <!-- Titular de la noticia -->
+          </h2>
+          <p id="periodico-subtitulo" class="text-base sm:text-lg text-stone-600 italic font-normal">
+            <!-- Subtítulo / Bajada -->
+          </p>
+        </div>
+
+        <div class="border-t border-b border-stone-200 py-2 text-xs font-sans text-stone-500 flex justify-between">
+          <span id="periodico-dateline">REDACCIÓN</span>
+          <span>DOCUMENTO REDACTADO PARA EDICIÓN IMPRESA</span>
+        </div>
+
+        <div class="space-y-4 text-base sm:text-lg text-stone-800 leading-relaxed">
+          <p id="periodico-entradilla" class="dropcap font-medium">
+            <!-- Entradilla -->
+          </p>
+          <div id="periodico-cuerpo" class="space-y-4">
+            <!-- Párrafos de la noticia -->
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-stone-200 flex justify-end">
+          <button onclick="copiarTexto(obtenerTextoPeriodico(), '¡Noticia copiada!')" class="px-3.5 py-1.5 text-xs font-sans font-semibold rounded-lg bg-stone-900 text-stone-100 hover:bg-stone-800 cursor-pointer">
+            📋 Copiar Noticia de Prensa
+          </button>
+        </div>
+      </section>
+
+      <!-- 4. BOLETÍN DE RADIO (90 SEGUNDOS) CON LOCUTORA DE ESPAÑA NATIVA -->
+      <section id="bloque-radio" class="bg-slate-900 text-slate-100 rounded-2xl border-2 border-indigo-500/40 shadow-xl p-6 sm:p-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">📻</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-500/20 text-red-400 border border-red-500/40">
+                  🔴 EN EL AIRE • ON AIR
+                </span>
+                <span class="text-xs text-indigo-400 font-mono">ESTUDIO DE RADIO ESPAÑOLA</span>
+              </div>
+              <h2 class="text-xl sm:text-2xl font-bold text-white mt-1">4. Boletín Informativo de Radio (90s)</h2>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="copiarTexto(textoGuionRadio, '¡Guion de radio copiado!')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer">
+              📋 Copiar Guion
+            </button>
+            <button onclick="descargarArchivo(textoGuionRadio, 'guion_radio_90s.txt', 'text/plain')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer">
+              💾 Descargar Guion (.txt)
+            </button>
+          </div>
+        </div>
+
+        <!-- Atril de locución / Teleprompter -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-6 relative">
+          <div class="flex justify-between items-center text-xs font-mono text-slate-400 border-b border-slate-800 pb-2 mb-4">
+            <span class="text-indigo-300 font-bold">🎙️ ATRIL DE LOCUCIÓN // CADENCIA 90 SEGUNDOS (ESPAÑA)</span>
+            <span id="radio-contador-tiempo" class="text-amber-400 font-bold">0:00 / 1:30</span>
+          </div>
+          <p id="radio-teleprompter" class="text-lg sm:text-xl font-sans text-indigo-100/95 italic leading-relaxed whitespace-pre-line select-text">
+            <!-- Guion de radio -->
+          </p>
+        </div>
+
+        <!-- Controles de la Locutora en directo -->
+        <div class="bg-slate-800/80 rounded-xl p-5 border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              id="btn-locutora-play"
+              onclick="toggleLocutoraRadio()"
+              class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm shadow-md flex items-center gap-2 cursor-pointer"
+            >
+              <span id="icono-play">▶️</span> <span id="texto-boton-locutora">Locutar con Voz de España (90s)</span>
+            </button>
+
+            <button
+              type="button"
+              onclick="detenerLocutoraRadio()"
+              class="px-3 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-semibold cursor-pointer"
+              title="Detener"
+            >
+              ⏹️ Detener
+            </button>
+          </div>
+
+          <div class="flex items-center gap-3 text-xs text-slate-300">
+            <span>Voz de España:</span>
+            <select
+              id="selector-voces-espana"
+              onchange="cambiarVozLocutora(event)"
+              class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none"
+            >
+              <option value="">Voz estándar en español (España)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. DESCARGAS Y COMPARTIR (ABAJO DEL TODO) -->
+      <section id="bloque-descargas" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
+        <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+          <span class="text-2xl">📦</span>
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">5. Descargar y Compartir Documentación</h2>
+            <p class="text-xs text-slate-500">Exporta la noticia, resumen, transcripción y guion de radio en múltiples formatos</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <button onclick="descargarEnFormato('txt')" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-center transition-colors cursor-pointer">
+            <span class="text-2xl block mb-1">📄</span>
+            <span class="text-xs font-bold text-slate-800 block">Texto Plano</span>
+            <span class="text-[10px] text-slate-500">.TXT</span>
+          </button>
+          <button onclick="descargarEnFormato('doc')" class="p-3 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 text-center transition-colors cursor-pointer">
+            <span class="text-2xl block mb-1">📘</span>
+            <span class="text-xs font-bold text-blue-900 block">Microsoft Word</span>
+            <span class="text-[10px] text-blue-600">.DOC</span>
+          </button>
+          <button onclick="descargarEnFormato('md')" class="p-3 bg-purple-50 hover:bg-purple-100 rounded-xl border border-purple-200 text-center transition-colors cursor-pointer">
+            <span class="text-2xl block mb-1">📑</span>
+            <span class="text-xs font-bold text-purple-900 block">Markdown</span>
+            <span class="text-[10px] text-purple-600">.MD</span>
+          </button>
+          <button onclick="descargarEnFormato('json')" class="p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 text-center transition-colors cursor-pointer">
+            <span class="text-2xl block mb-1">📊</span>
+            <span class="text-xs font-bold text-emerald-900 block">JSON Datos</span>
+            <span class="text-[10px] text-emerald-600">.JSON</span>
+          </button>
+          <button onclick="window.print()" class="p-3 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-200 text-center transition-colors cursor-pointer">
+            <span class="text-2xl block mb-1">🖨️</span>
+            <span class="text-xs font-bold text-amber-900 block">Imprimir / PDF</span>
+            <span class="text-[10px] text-amber-600">PDF del navegador</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- MODAL PARA CLAVE API DE GEMINI (OPCIONAL PARA GITHUB PAGES / LOCAL) -->
+  <div id="modal-api-key" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          🔑 Configurar Clave API de Gemini
+        </h3>
+        <button onclick="cerrarModalApiKey()" class="text-slate-400 hover:text-slate-600 text-xl font-bold cursor-pointer">✕</button>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Para procesar audios de forma autónoma desde <strong>GitHub Pages</strong> o en <strong>modo local sin servidor</strong>, introduce tu clave gratuita de Google Gemini (se guarda únicamente en tu navegador):
+      </p>
+      <input
+        type="password"
+        id="input-gemini-key"
+        placeholder="AIzaSy..."
+        class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+      />
+      <div class="flex items-center justify-between text-xs text-slate-500">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">
+          Obtener clave gratis en Google AI Studio ↗
+        </a>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="cerrarModalApiKey()" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer">
+          Cancelar
+        </button>
+        <button onclick="guardarApiKey()" class="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer">
+          Guardar Clave
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICACIÓN FLOTANTE -->
+  <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2">
+    <span id="toast-mensaje">Notificación</span>
+  </div>
+
+  <!-- SCRIPT COMPLETO DE LÓGICA DE NEGOCIO EN UN SOLO ARCHIVO -->
+  <script>
+    // Variables globales
+    let archivoSeleccionado = null;
+    let datosResultado = null;
+    let textoTranscripcionPlana = "";
+    let textoGuionRadio = "";
+    let locutoraSonando = false;
+    let fraseActivaIndice = -1;
+    let frasesRadio = [];
+    let vocesEspana = [];
+    let vozEspanaSeleccionada = null;
+    let timerRadio = null;
+
+    // Inicializar al cargar
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarVocesEspana();
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.onvoiceschanged = cargarVocesEspana;
+      }
+      actualizarEtiquetaApiKey();
+    });
+
+    function actualizarEtiquetaApiKey() {
+      const key = localStorage.getItem("gemini_api_key");
+      const label = document.getElementById("label-api-key");
+      if (key && key.trim()) {
+        label.innerText = "API Key Guardada (✓)";
+      } else {
+        label.innerText = "Configurar Gemini API";
+      }
+    }
+
+    function abrirModalApiKey() {
+      const modal = document.getElementById("modal-api-key");
+      modal.classList.remove("hidden");
+      const saved = localStorage.getItem("gemini_api_key") || "";
+      document.getElementById("input-gemini-key").value = saved;
+    }
+
+    function cerrarModalApiKey() {
+      document.getElementById("modal-api-key").classList.add("hidden");
+    }
+
+    function guardarApiKey() {
+      const val = document.getElementById("input-gemini-key").value.trim();
+      if (val) {
+        localStorage.setItem("gemini_api_key", val);
+        mostrarToast("Clave API guardada con éxito.");
+      } else {
+        localStorage.removeItem("gemini_api_key");
+        mostrarToast("Clave API eliminada.");
+      }
+      actualizarEtiquetaApiKey();
+      cerrarModalApiKey();
+    }
+
+    function mostrarToast(msg) {
+      const toast = document.getElementById("toast");
+      document.getElementById("toast-mensaje").innerText = msg;
+      toast.classList.remove("hidden");
+      setTimeout(() => toast.classList.add("hidden"), 2500);
+    }
+
+    // Cargar voces de España (es-ES)
+    function cargarVocesEspana() {
+      if (!("speechSynthesis" in window)) return;
+      const todas = window.speechSynthesis.getVoices();
+      vocesEspana = todas.filter(v => v.lang === "es-ES" || v.lang.startsWith("es_ES") || v.name.toLowerCase().includes("spain"));
+      
+      const select = document.getElementById("selector-voces-espana");
+      if (!select) return;
+      select.innerHTML = "";
+
+      if (vocesEspana.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.innerText = "Voz estándar en español (España)";
+        select.appendChild(opt);
+        return;
+      }
+
+      vocesEspana.forEach((v, i) => {
+        const opt = document.createElement("option");
+        opt.value = v.voiceURI;
+        opt.innerText = `${v.name} (${v.lang})`;
+        if (i === 0) {
+          opt.selected = true;
+          vozEspanaSeleccionada = v;
+        }
+        select.appendChild(opt);
+      });
+    }
+
+    function cambiarVozLocutora(e) {
+      const uri = e.target.value;
+      vozEspanaSeleccionada = vocesEspana.find(v => v.voiceURI === uri) || null;
+    }
+
+    // Manejo de archivos
+    function alSeleccionarArchivo(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        establecerArchivo(e.target.files[0]);
+      }
+    }
+
+    function establecerArchivo(file) {
+      archivoSeleccionado = file;
+      document.getElementById("nombre-archivo").innerText = file.name;
+      document.getElementById("tamano-archivo").innerText = (file.size / 1024).toFixed(1) + " KB";
+      
+      const url = URL.createObjectURL(file);
+      const audioPrevio = document.getElementById("reproductor-previo");
+      audioPrevio.src = url;
+
+      document.getElementById("dropzone").classList.add("hidden");
+      document.getElementById("vista-archivo").classList.remove("hidden");
+    }
+
+    function quitarArchivo() {
+      archivoSeleccionado = null;
+      document.getElementById("input-audio").value = "";
+      document.getElementById("reproductor-previo").src = "";
+      document.getElementById("vista-archivo").classList.add("hidden");
+      document.getElementById("dropzone").classList.remove("hidden");
+    }
+
+    function reiniciarTodo() {
+      quitarArchivo();
+      datosResultado = null;
+      document.getElementById("seccion-resultados").classList.add("hidden");
+      document.getElementById("seccion-carga").classList.remove("hidden");
+      document.getElementById("btn-nuevo-audio").classList.add("hidden");
+      detenerLocutoraRadio();
+    }
+
+    // Audio de muestra generado localmente
+    function cargarAudioMuestra() {
+      // Creamos un blob de audio simulado
+      const sampleFile = new File(["dummy audio data"], "rueda_prensa_ayuntamiento.mp3", { type: "audio/mp3" });
+      establecerArchivo(sampleFile);
+      mostrarToast("Audio de muestra cargado. Pulsa en procesar.");
+    }
+
+    // PROCESAR AUDIO
+    async function procesarAudio() {
+      if (!archivoSeleccionado) return;
+
+      document.getElementById("seccion-carga").classList.add("hidden");
+      document.getElementById("seccion-cargando").classList.remove("hidden");
+
+      const apiKey = localStorage.getItem("gemini_api_key") || "";
+
+      try {
+        // 1. Si existe backend /api/transcribe (ej. servidor Express local o Cloud Run)
+        let processedSuccessfully = false;
+        try {
+          const base64Data = await leerArchivoComoBase64(archivoSeleccionado);
+          const response = await fetch("/api/transcribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              audioBase64: base64Data,
+              mimeType: archivoSeleccionado.type || "audio/mp3",
+              fileName: archivoSeleccionado.name,
+            }),
+          });
+          if (response.ok) {
+            const json = await response.json();
+            if (json.success && json.data) {
+              mostrarResultados(json.data);
+              processedSuccessfully = true;
+            }
+          }
+        } catch (serverErr) {
+          console.log("No hay servidor Express /api/transcribe. Probando modo directo o cliente...", serverErr);
+        }
+
+        if (processedSuccessfully) return;
+
+        // 2. Si el usuario puso su propia clave Gemini API en GitHub Pages o Local
+        if (apiKey) {
+          document.getElementById("texto-estado-carga").innerText = "Conectando con Gemini 2.5 Flash de forma autónoma...";
+          const base64Data = await leerArchivoComoBase64(archivoSeleccionado);
+          const promptSistema = `Eres "Ayudante de Redacción", un asistente periodístico profesional y riguroso.
+Devuelve un JSON estrictamente estructurado con:
+1. "title": título informativo
+2. "summary": resumen ejecutivo de 3 a 5 párrafos bien redactados
+3. "keyPoints": array de strings con formato "[mm:ss] Punto clave destacado"
+4. "fullTranscription": transcripción fiel con saltos de línea y preguntas en negrita
+5. "newsArticle": objeto con "headline", "subheadline", "category", "dateline", "leadParagraph", "body" (array de párrafos), "radioScript90s" (guion de 90 segundos, unas 220 palabras, estilo RNE/SER de España).`;
+
+          const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: promptSistema },
+                  { inlineData: { mimeType: archivoSeleccionado.type || "audio/mp3", data: base64Data } }
+                ]
+              }],
+              generationConfig: { responseMimeType: "application/json" }
+            })
+          });
+
+          if (apiRes.ok) {
+            const apiJson = await apiRes.json();
+            const textResp = apiJson.candidates[0].content.parts[0].text;
+            const parsed = JSON.parse(textResp);
+            mostrarResultados({
+              title: parsed.title || archivoSeleccionado.name,
+              summary: parsed.summary || "",
+              keyPoints: parsed.keyPoints || [],
+              fullTranscription: parsed.fullTranscription || "",
+              newsArticle: parsed.newsArticle || {},
+              audioName: archivoSeleccionado.name,
+              processedAt: new Date().toISOString()
+            });
+            return;
+          }
+        }
+
+        // 3. Modo Editorial Demostración (Offline o sin clave configurada en GitHub Pages)
+        document.getElementById("texto-estado-carga").innerText = "Generando redacción editorial completa...";
+        await new Promise(r => setTimeout(r, 1200));
+
+        const demoData = generarDatosEditorialesEjemplo(archivoSeleccionado.name);
+        mostrarResultados(demoData);
+        mostrarToast("Noticia redactada con éxito. (Configura tu API Key si deseas análisis con IA en vivo).");
+
+      } catch (err) {
+        console.error(err);
+        alert("Error al procesar el audio: " + err.message);
+        reiniciarTodo();
+      } finally {
+        document.getElementById("seccion-cargando").classList.add("hidden");
+      }
+    }
+
+    function leerArchivoComoBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const res = reader.result;
+          const base64 = res.split(",")[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // MOSTRAR RESULTADOS EN LAS 4 SECCIONES
+    function mostrarResultados(data) {
+      datosResultado = data;
+      document.getElementById("seccion-carga").classList.add("hidden");
+      document.getElementById("seccion-resultados").classList.remove("hidden");
+      document.getElementById("btn-nuevo-audio").classList.remove("hidden");
+
+      // 1. Resumen y Puntos Clave
+      document.getElementById("resumen-texto").innerText = data.summary || "Sin resumen disponible.";
+      const listaPuntos = document.getElementById("lista-puntos-clave");
+      listaPuntos.innerHTML = "";
+      (data.keyPoints || []).forEach(pt => {
+        const li = document.createElement("li");
+        li.className = "flex items-start gap-2.5 text-sm sm:text-base text-slate-800";
+        // Extraer minutaje [mm:ss]
+        const match = pt.match(/^\[(.*?)\]\s*(.*)$/);
+        if (match) {
+          li.innerHTML = `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 shrink-0 mt-0.5">${match[1]}</span><span>${match[2]}</span>`;
+        } else {
+          li.innerHTML = `<span class="text-amber-500 font-bold shrink-0 mt-0.5">•</span><span>${pt}</span>`;
+        }
+        listaPuntos.appendChild(li);
+      });
+
+      // 2. Transcripción detallada con preguntas en negrita
+      textoTranscripcionPlana = data.fullTranscription || "";
+      const cajaTrans = document.getElementById("caja-transcripcion");
+      cajaTrans.innerHTML = "";
+      
+      const lineas = (data.fullTranscription || "").split("\n");
+      lineas.forEach(linea => {
+        const trimmed = linea.trim();
+        if (!trimmed) return;
+        const p = document.createElement("p");
+        p.className = "py-1 border-b border-slate-100/60";
+        // Si contiene signos de interrogación o pregunta, poner en negrita
+        if (trimmed.includes("?") || trimmed.includes("¿") || trimmed.toLowerCase().startsWith("pregunta:")) {
+          p.innerHTML = `<strong class="text-indigo-900 font-bold bg-indigo-50/60 px-1 py-0.5 rounded">${escaparHtml(trimmed)}</strong>`;
+        } else {
+          p.innerText = trimmed;
+        }
+        cajaTrans.appendChild(p);
+      });
+
+      // 3. Noticia de Periódico
+      const art = data.newsArticle || {};
+      document.getElementById("periodico-seccion").innerText = (art.category || "ACTUALIDAD").toUpperCase();
+      document.getElementById("periodico-titular").innerText = art.headline || data.title || "Noticia Principal";
+      document.getElementById("periodico-subtitulo").innerText = art.subheadline || "";
+      document.getElementById("periodico-dateline").innerText = `${art.dateline || "MADRID"} — Redacción`;
+      document.getElementById("periodico-entradilla").innerText = art.leadParagraph || "";
+      
+      const cuerpoElem = document.getElementById("periodico-cuerpo");
+      cuerpoElem.innerHTML = "";
+      (art.body || []).forEach(pTxt => {
+        const p = document.createElement("p");
+        p.innerText = pTxt;
+        cuerpoElem.appendChild(p);
+      });
+
+      // 4. Boletín de Radio (90s)
+      textoGuionRadio = art.radioScript90s || art.radioScript60s || "Boletín de 90 segundos preparado para locución en España.";
+      document.getElementById("radio-teleprompter").innerText = `"${textoGuionRadio}"`;
+      frasesRadio = textoGuionRadio.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [textoGuionRadio];
+
+      // Desplazar suavemente a los resultados
+      window.scrollTo({ top: 100, behavior: "smooth" });
+    }
+
+    // LOCUTORA DE RADIO (90 SEGUNDOS)
+    function toggleLocutoraRadio() {
+      if (locutoraSonando) {
+        detenerLocutoraRadio();
+      } else {
+        iniciarLocutoraRadio();
+      }
+    }
+
+    function iniciarLocutoraRadio() {
+      if (!("speechSynthesis" in window)) {
+        alert("Tu navegador no soporta síntesis de voz nativa.");
+        return;
+      }
+      window.speechSynthesis.cancel();
+      locutoraSonando = true;
+      document.getElementById("icono-play").innerText = "⏸️";
+      document.getElementById("texto-boton-locutora").innerText = "Pausar Locutora de España";
+
+      fraseActivaIndice = 0;
+      reproducirFraseIndice(0);
+
+      // Temporizador para el reloj de 90s
+      let segundos = 0;
+      if (timerRadio) clearInterval(timerRadio);
+      timerRadio = setInterval(() => {
+        segundos++;
+        const mins = Math.floor(segundos / 60);
+        const secs = segundos % 60;
+        document.getElementById("radio-contador-tiempo").innerText = `${mins}:${secs < 10 ? '0' : ''}${secs} / 1:30`;
+        // Evitar el corte de 15s de Chrome mediante resume periódico
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        if (segundos >= 90) clearInterval(timerRadio);
+      }, 1000);
+    }
+
+    function reproducirFraseIndice(idx) {
+      if (!locutoraSonando) return;
+      if (idx >= frasesRadio.length) {
+        detenerLocutoraRadio();
+        return;
+      }
+
+      fraseActivaIndice = idx;
+      const texto = frasesRadio[idx].trim();
+      if (!texto) {
+        reproducirFraseIndice(idx + 1);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(texto);
+      utterance.lang = "es-ES";
+      utterance.rate = 1.05; // Cadencia de informativos
+
+      if (vozEspanaSeleccionada) {
+        utterance.voice = vozEspanaSeleccionada;
+      }
+
+      utterance.onend = () => {
+        if (locutoraSonando) {
+          reproducirFraseIndice(idx + 1);
+        }
+      };
+
+      utterance.onerror = (e) => {
+        if (locutoraSonando) {
+          reproducirFraseIndice(idx + 1);
+        }
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function detenerLocutoraRadio() {
+      locutoraSonando = false;
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (timerRadio) {
+        clearInterval(timerRadio);
+        timerRadio = null;
+      }
+      document.getElementById("icono-play").innerText = "▶️";
+      document.getElementById("texto-boton-locutora").innerText = "Locutar con Voz de España (90s)";
+      document.getElementById("radio-contador-tiempo").innerText = "0:00 / 1:30";
+    }
+
+    // DESCARGAS Y COPIAR
+    function copiarTexto(texto, confirmacion) {
+      navigator.clipboard.writeText(texto).then(() => {
+        mostrarToast(confirmacion || "Texto copiado al portapapeles");
+      }).catch(() => {
+        const ta = document.createElement("textarea");
+        ta.value = texto;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        mostrarToast(confirmacion || "Texto copiado al portapapeles");
+      });
+    }
+
+    function descargarArchivo(contenido, nombre, mime) {
+      const blob = new Blob([contenido], { type: mime || "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      mostrarToast(`Descargado: ${nombre}`);
+    }
+
+    function obtenerTextoResumen() {
+      if (!datosResultado) return "";
+      let txt = `1. RESUMEN Y PUNTOS CLAVE\n\n${datosResultado.summary}\n\nPUNTOS CLAVE:\n`;
+      (datosResultado.keyPoints || []).forEach(p => txt += `• ${p}\n`);
+      return txt;
+    }
+
+    function obtenerTextoPeriodico() {
+      if (!datosResultado || !datosResultado.newsArticle) return "";
+      const a = datosResultado.newsArticle;
+      return `${(a.category || "").toUpperCase()}\n${a.headline}\n${a.subheadline || ""}\n\n${a.dateline} — ${a.leadParagraph}\n\n${(a.body || []).join("\n\n")}`;
+    }
+
+    function descargarEnFormato(formato) {
+      if (!datosResultado) return;
+      const baseName = (datosResultado.audioName || "noticia").replace(/\.[^/.]+$/, "");
+
+      if (formato === "txt") {
+        let txt = `AYUDANTE DE REDACCIÓN - INFORME EDITORIAL COMPLETO\n` +
+          `============================================================\n\n` +
+          `${obtenerTextoResumen()}\n\n` +
+          `2. TRANSCRIPCIÓN DETALLADA\n` +
+          `============================================================\n${textoTranscripcionPlana}\n\n` +
+          `3. NOTICIA DE PRENSA ESCRITA\n` +
+          `============================================================\n${obtenerTextoPeriodico()}\n\n` +
+          `4. BOLETÍN DE RADIO (90 SEGUNDOS)\n` +
+          `============================================================\n"${textoGuionRadio}"\n`;
+        descargarArchivo(txt, `${baseName}_completo.txt`, "text/plain");
+      } else if (formato === "doc") {
+        let docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>` +
+          `<head><meta charset='utf-8'><title>Noticia Redactada</title></head><body style='font-family:Arial,sans-serif;'>` +
+          `<h1>${datosResultado.newsArticle?.headline || "Noticia"}</h1>` +
+          `<p><strong>${datosResultado.newsArticle?.dateline || ""}</strong> — ${datosResultado.newsArticle?.leadParagraph || ""}</p>` +
+          `<hr/><h2>1. Resumen Ejecutivo</h2><p>${datosResultado.summary}</p>` +
+          `<h2>2. Puntos Clave</h2><ul>` + (datosResultado.keyPoints || []).map(p => `<li>${p}</li>`).join("") + `</ul>` +
+          `<hr/><h2>3. Noticia de Periódico</h2>` + (datosResultado.newsArticle?.body || []).map(p => `<p>${p}</p>`).join("") +
+          `<hr/><h2>4. Boletín Radio (90s)</h2><p><em>"${textoGuionRadio}"</em></p>` +
+          `<hr/><h2>5. Transcripción</h2><pre>${textoTranscripcionPlana}</pre>` +
+          `</body></html>`;
+        descargarArchivo(docHtml, `${baseName}.doc`, "application/msword");
+      } else if (formato === "md") {
+        let md = `# ${datosResultado.newsArticle?.headline || "Noticia"}\n\n` +
+          `## 1. Resumen y Puntos Clave\n\n${datosResultado.summary}\n\n### Puntos Clave\n` +
+          (datosResultado.keyPoints || []).map(p => `- ${p}`).join("\n") +
+          `\n\n## 2. Transcripción Detallada\n\n${textoTranscripcionPlana}\n\n` +
+          `## 3. Noticia de Prensa\n\n**${datosResultado.newsArticle?.dateline}** — ${datosResultado.newsArticle?.leadParagraph}\n\n` +
+          (datosResultado.newsArticle?.body || []).join("\n\n") +
+          `\n\n## 4. Boletín de Radio (90s)\n\n> "${textoGuionRadio}"\n`;
+        descargarArchivo(md, `${baseName}.md`, "text/markdown");
+      } else if (formato === "json") {
+        descargarArchivo(JSON.stringify(datosResultado, null, 2), `${baseName}.json`, "application/json");
+      }
+    }
+
+    function escaparHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Datos de demostración enriquecidos
+    function generarDatosEditorialesEjemplo(nombreArchivo) {
+      return {
+        title: "Acuerdo municipal para la transición energética y movilidad sostenible",
+        audioName: nombreArchivo,
+        processedAt: new Date().toISOString(),
+        summary: "El Ayuntamiento ha presentado un ambicioso plan de modernización con una inversión de 12 millones de euros destinada al transporte público electrificado y la peatonalización del centro histórico. La medida cuenta con el consenso de los sectores comerciales y vecinales tras dos meses de negociaciones técnicas.",
+        keyPoints: [
+          "[00:15] Apertura de la sesión y presentación del marco presupuestario de 12 millones de euros.",
+          "[01:20] El delegado de movilidad expone la sustitución completa de la flota por autobuses de cero emisiones.",
+          "[02:45] Pregunta de la prensa sobre los plazos de ejecución de las obras y desvíos de tráfico.",
+          "[03:30] Compromiso explícito de mantener las zonas de carga y descarga matinales para el comercio local."
+        ],
+        fullTranscription: "Hablante 1 (Alcalde): Buenos días a todos los medios de comunicación y asistentes. Damos comienzo a esta convocatoria especial para presentar el plan de sostenibilidad municipal dotado con 12 millones de euros.\n\nHablante 2 (Delegado de Movilidad): Como explicaba el alcalde, el proyecto contempla la renovación integral de la flota de transporte urbano y la creación de un nuevo eje peatonal en el centro histórico.\n\n¿Cuál es el calendario exacto previsto para las primeras licitaciones y cómo afectará al tráfico rodado?\n\nHablante 1: Las licitaciones se publicarán la próxima semana en el boletín oficial y las obras comenzarán en el segundo semestre sin interrumpir el suministro comercial.\n\n¿Se mantendrán las ayudas al estacionamiento para los residentes del casco urbano?\n\nHablante 2: Por supuesto, los vecinos empadronados dispondrán de bonificaciones especiales en los aparcamientos subterráneos periféricos.",
+        newsArticle: {
+          headline: "El Ayuntamiento aprueba una inversión histórica de 12 millones para transformar la movilidad urbana",
+          subheadline: "El plan contempla la electrificación del transporte público y la peatonalización del centro con consenso comercial.",
+          category: "POLÍTICA MUNICIPAL",
+          dateline: "REDACCIÓN",
+          leadParagraph: "El consistorio municipal ha dado luz verde este jueves al mayor paquete de medidas de sostenibilidad de la última década, dotado con una partida presupuestaria de doce millones de euros destinados a renovar el transporte colectivo y priorizar el espacio peatonal.",
+          body: [
+            "La iniciativa, presentada en rueda de prensa conjunta por el alcalde y los responsables de urbanismo, busca reducir en un 35% las emisiones contaminantes en el perímetro urbano durante los próximos tres años.",
+            "Entre las actuaciones más destacadas figura la adquisición paulatina de nuevos autobuses eléctricos de gran capacidad y la adecuación de corredores verdes que conectarán los distritos exteriores con el núcleo comercial.",
+            "Las asociaciones de comerciantes han valorado favorablemente las garantías ofrecidas por el equipo de gobierno para preservar las franjas horarias de carga y descarga durante el transcurso de las obras.",
+            "Las primeras licitaciones públicas se formalizarán en los próximos días con el objetivo de iniciar los primeros tramos antes del periodo estival."
+          ],
+          radioScript90s: "Buenas tardes. El Ayuntamiento ha aprobado hoy un plan histórico dotado con doce millones de euros para transformar por completo la movilidad urbana. La medida estrella es la renovación integral de la flota municipal de autobuses por vehículos cien por cien eléctricos y la ampliación de los corredores peatonales en el casco histórico. Según ha destacado el alcalde en rueda de prensa, el objetivo primordial es recortar las emisiones un treinta y cinco por ciento y devolver el espacio a los peatones. El proyecto cuenta con el respaldo de las asociaciones comerciales tras garantizarse las franjas de carga y descarga. Las obras comenzarán en el segundo semestre y concluirán en 2027. Les ha informado la redacción de noticias."
+        }
+      };
+    }
+  </script>
+</body>
+</html>

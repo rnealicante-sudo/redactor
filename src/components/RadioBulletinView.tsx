@@ -269,8 +269,7 @@ export const RadioBulletinView: React.FC<RadioBulletinViewProps> = ({ article, a
     // If cloud audio already generated, just play it
     if (audioBlobUrl) {
       if (audioElementRef.current) {
-        window.speechSynthesis.cancel();
-        stopBrowserTimer();
+        stopBrowserSpeech();
         audioElementRef.current.currentTime = 0;
         audioElementRef.current.playbackRate = playbackRate;
         audioElementRef.current.play().then(() => {

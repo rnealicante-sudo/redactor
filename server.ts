@@ -443,6 +443,12 @@ Responde estrictamente en formato JSON válido según el esquema especificado.
     }
   });
 
+  // Descarga del archivo único index.html para GitHub y local
+  app.get("/api/download-single-html", (_req, res) => {
+    const filePath = path.join(process.cwd(), "single-file-github", "index.html");
+    res.download(filePath, "index.html");
+  });
+
   // Vite middleware setup
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

@@ -2,7 +2,6 @@ import React, { useState, useRef } from "react";
 import { 
   Upload, 
   FileAudio, 
-  Mic, 
   Sparkles, 
   Play, 
   Pause, 
@@ -20,7 +19,6 @@ interface AudioUploaderProps {
   onClearFile: () => void;
   onProcessAudio: (customInstructions: string) => void;
   isProcessing: boolean;
-  onOpenRecorder: () => void;
 }
 
 export const AudioUploader: React.FC<AudioUploaderProps> = ({
@@ -31,7 +29,6 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
   onClearFile,
   onProcessAudio,
   isProcessing,
-  onOpenRecorder,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -127,7 +124,7 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
         <div>
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <FileAudio className="w-5 h-5 text-indigo-600" />
-            Cargar o Grabar Audio
+            Cargar Archivo de Audio
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Compatible con <strong className="text-slate-700">cualquier formato de audio</strong>: MP3, WAV, M4A, AAC, OGG, FLAC, WMA, OPUS, AMR, AIFF, WebM y videos con audio.
@@ -137,23 +134,13 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            id="btn-open-recorder"
-            onClick={onOpenRecorder}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-lg transition-colors cursor-pointer"
-          >
-            <Mic className="w-3.5 h-3.5 text-rose-500" />
-            Grabar voz
-          </button>
-
-          <button
-            type="button"
             id="btn-load-demo"
             onClick={handleLoadDemo}
             disabled={isLoadingDemo || isProcessing}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            {isLoadingDemo ? "Generando..." : "Audio de muestra"}
+            {isLoadingDemo ? "Generando..." : "Cargar audio de muestra"}
           </button>
         </div>
       </div>
@@ -185,7 +172,7 @@ export const AudioUploader: React.FC<AudioUploaderProps> = ({
           </div>
 
           <p className="text-base font-semibold text-slate-800">
-            Arrastra tu archivo de <span className="text-indigo-600">audio o voz aquí</span>
+            Arrastra tu archivo de <span className="text-indigo-600">audio aquí</span>
           </p>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
             o haz clic para seleccionar cualquier archivo de audio de tu dispositivo.

@@ -9,7 +9,12 @@ import {
   Check,
   Newspaper,
   Radio,
-  ListFilter
+  ListFilter,
+  Download,
+  HelpCircle,
+  ExternalLink,
+  CheckCircle2,
+  X
 } from "lucide-react";
 import { AudioProcessingResult } from "./types";
 import { AudioUploader } from "./components/AudioUploader";
@@ -18,7 +23,6 @@ import { SummaryCard } from "./components/SummaryCard";
 import { NewspaperArticleView } from "./components/NewspaperArticleView";
 import { RadioBulletinView } from "./components/RadioBulletinView";
 import { ShareBar } from "./components/ShareBar";
-import { VoiceRecorderModal } from "./components/VoiceRecorderModal";
 import { fileToBase64, convertAudioToWav } from "./utils/audioHelper";
 
 export default function App() {
@@ -31,8 +35,8 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [result, setResult] = useState<AudioProcessingResult | null>(null);
-  const [isRecorderOpen, setIsRecorderOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "summary" | "transcription" | "newspaper" | "radio">("all");
+  const [showGitHubModal, setShowGitHubModal] = useState(false);
 
   const handleSelectFile = (file: File | Blob, name: string) => {
     setSelectedFile(file);
@@ -55,10 +59,6 @@ export default function App() {
     setResult(null);
     setErrorMessage(null);
     setActiveTab("all");
-  };
-
-  const handleRecordingComplete = (blob: Blob, name: string) => {
-    handleSelectFile(blob, name);
   };
 
   const handleProcessAudio = async (customInstructions: string) => {
@@ -175,6 +175,18 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              id="btn-export-single-file"
+              onClick={() => setShowGitHubModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 rounded-lg transition-colors border border-indigo-200 cursor-pointer"
+              title="Descargar index.html único para GitHub Pages o uso local"
+            >
+              <Download className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="hidden sm:inline">1 Archivo (GitHub / Local)</span>
+              <span className="sm:hidden">GitHub</span>
+            </button>
+
             {result && (
               <button
                 type="button"
@@ -259,7 +271,6 @@ export default function App() {
               onClearFile={handleClearFile}
               onProcessAudio={handleProcessAudio}
               isProcessing={isProcessing}
-              onOpenRecorder={() => setIsRecorderOpen(true)}
             />
 
             {/* Feature preview cards showing the 4 steps in requested order */}
@@ -445,12 +456,95 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Voice Recorder Modal */}
-      <VoiceRecorderModal
-        isOpen={isRecorderOpen}
-        onClose={() => setIsRecorderOpen(false)}
-        onRecordingComplete={handleRecordingComplete}
-      />
+      {/* Modal: Despliegue en GitHub y Archivo Único Local */}
+      {showGitHubModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-5 my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-base">
+                  🚀
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                    Archivo Único Autónomo para GitHub y Local
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Todo incluido en un solo archivo index.html listo para GitHub Pages o doble clic
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGitHubModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs sm:text-sm text-slate-600">
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-1.5">
+                <p className="font-bold text-amber-900 flex items-center gap-1.5">
+                  <span>💡</span> ¿Por qué no se veía antes en GitHub?
+                </p>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Los proyectos estándar en desarrollo apuntan a archivos TypeScript (.tsx) que los navegadores no pueden ejecutar en bruto sin compilar. Hemos empaquetado <strong>toda la aplicación en un único archivo index.html</strong> autónomo con estilos, interfaz y locutora nativa de España.
+                </p>
+                <p className="text-xs text-emerald-800 font-semibold flex items-center gap-1 mt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Se ha eliminado por completo la opción de grabar voz y cualquier permiso de micrófono.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                  Cómo publicarlo en GitHub Pages en 2 pasos:
+                </h4>
+                <ol className="list-decimal pl-5 space-y-1.5 text-xs text-slate-600">
+                  <li>
+                    Descarga el archivo con el botón de abajo y súbelo a la <strong>raíz</strong> de tu repositorio de GitHub.
+                  </li>
+                  <li>
+                    En tu repositorio ve a <strong>Settings → Pages → Source</strong> (Branch: <code>main</code> o <code>master</code>, carpeta: <code>/(root)</code>) y pulsa <strong>Save</strong>.
+                  </li>
+                  <li>
+                    ¡En 30 segundos estará publicado y visible en <code>https://tu-usuario.github.io/tu-repo/</code>!
+                  </li>
+                </ol>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                  Cómo abrirlo en tu ordenador (modo local):
+                </h4>
+                <p className="text-xs text-slate-600">
+                  Simplemente haz <strong>doble clic</strong> en el archivo <code>index.html</code> descargado. Se abrirá al instante en Chrome, Edge, Firefox o Safari sin necesidad de instalar nada.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <a
+                href="/api/download-single-html"
+                download="index.html"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Descargar index.html (Archivo Único)</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowGitHubModal(false)}
+                className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
